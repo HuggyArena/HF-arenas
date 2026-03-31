@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  walletAddress String?    @unique
+  email         String?    @unique
+  displayName   String?
+  kycStatus     String     @default("NONE")
+  kycLevel      String     @default("NONE")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  bets          Bet[]
+  positions     Position[]
+}
+
+model Creator {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  tier            String   @default("applicant")
+  reputationScore Float    @default(50)
+  feeShareBps     Int      @default(100)
+  bondLocked      Decimal  @default(0) @db.Decimal(20, 6)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  markets         Market[]
+}
+
+model Repository {
+  id                String   @id @default(uuid())
+  providerRepoId    String   @unique
+  repoType          String
+  ownerHandle       String
+  repoName          String
+  verifiedCreatorId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  markets           Market[]
+}
+
+model Market {
+  id              String          @id @default(uuid())
+  contractAddress String          @unique
+  status          String
+  creatorId       String?
+  repositoryId    String?
+  title           String
+  question        String
+  sourcePrimary   String
+  sourceFallback  String?
+  closeTime       DateTime
+  resolveTime     DateTime
+  challengeWindow Int             @default(86400)
+  totalPool       Decimal         @default(0) @db.Decimal(20, 6)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  outcomes        MarketOutcome[]
+  bets            Bet[]
+  positions       Position[]
+  creator         Creator?        @relation(fields: [creatorId], references: [id])
+  repository      Repository?     @relation(fields: [repositoryId], references: [id])
+}
+
+model MarketOutcome {
+  id         String     @id @default(uuid())
+  marketId   String
+  outcomeKey String
+  label      String
+  poolAmount Decimal    @default(0) @db.Decimal(20, 6)
+  odds       Decimal?   @db.Decimal(30, 18)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  market     Market     @relation(fields: [marketId], references: [id])
+  bets       Bet[]
+  positions  Position[]
+
+  @@unique([marketId, outcomeKey])
+}
+
+model Bet {
+  id        String        @id @default(uuid())
+  marketId  String
+  outcomeId String
+  userId    String
+  amount    Decimal       @db.Decimal(20, 6)
+  oddsAtBet Decimal?      @db.Decimal(30, 18)
+  status    String        @default("ACTIVE")
+  createdAt DateTime      @default(now())
+  market    Market        @relation(fields: [marketId], references: [id])
+  outcome   MarketOutcome @relation(fields: [outcomeId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+}
+
+model Position {
+  id              String        @id @default(uuid())
+  marketId        String
+  outcomeId       String
+  userId          String
+  stakeAmount     Decimal       @default(0) @db.Decimal(20, 6)
+  claimableAmount Decimal       @default(0) @db.Decimal(20, 6)
+  status          String        @default("open")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  market          Market        @relation(fields: [marketId], references: [id])
+  outcome         MarketOutcome @relation(fields: [outcomeId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@unique([marketId, outcomeId, userId])
+}
+
+model RelayedTransaction {
+  id             String    @id @default(uuid())
+  idempotencyKey String    @unique
+  userAddress    String
+  target         String
+  amount         String
+  marketId       String
+  chainId        Int
+  gelatoTaskId   String    @unique
+  txHash         String?
+  status         String
+  error          String?
+  createdAt      DateTime  @default(now())
+  executedAt     DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userAddress])
+  @@index([gelatoTaskId])
+}
+
+model SanctionCheck {
+  id        String   @id @default(uuid())
+  address   String
+  severity  String
+  source    String
+  checkedAt DateTime @default(now())
+
+  @@index([address, checkedAt])
+}
+
+model RepoSnapshot {
+  id           String   @id @default(uuid())
+  repositoryId String
+  capturedAt   DateTime
+  metrics      Json
+  snapshotHash String   @unique
+  signature    String
+  createdAt    DateTime @default(now())
+}
+
+model SyncState {
+  id        String   @id @default("default")
+  lastBlock BigInt
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}
