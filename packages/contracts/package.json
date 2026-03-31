@@ -1,0 +1,9 @@
+{
+  "name": "@arena/contracts",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv"
+  }
+}
