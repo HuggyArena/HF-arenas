@@ -12,7 +12,7 @@ commands:
           name: Enable corepack and pnpm
           command: |
             node --version
-            corepack enable
+            sudo corepack enable
             corepack prepare pnpm@9.12.3 --activate
             pnpm --version
       - restore_cache:
