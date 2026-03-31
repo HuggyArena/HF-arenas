@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   relayer:
-    build: ./apps/relayer
+    build:
+      context: ..
+      dockerfile: apps/relayer/Dockerfile
     ports:
       - "3001:3001"
     environment:
@@ -10,14 +12,18 @@ services:
     depends_on:
       - db
       - redis
+    restart: unless-stopped
   indexer:
-    build: ./apps/indexer
+    build:
+      context: ..
+      dockerfile: apps/indexer/Dockerfile
     ports:
       - "3002:3002"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/arena
     depends_on:
       - db
+    restart: unless-stopped
   db:
     image: postgres:15-alpine
     restart: unless-stopped
