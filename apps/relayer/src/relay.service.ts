@@ -32,6 +32,7 @@ export class RelayService implements OnApplicationShutdown {
   private readonly logger = new Logger(RelayService.name);
   private readonly activeTimers = new Map<string, NodeJS.Timeout>();
   private readonly MAX_POLLING_DURATION = 15 * 60 * 1000;
+  private readonly MAX_STATUS_CHECK_ATTEMPTS = 60;
   private shuttingDown = false;
 
   constructor(
@@ -202,13 +203,17 @@ export class RelayService implements OnApplicationShutdown {
       attempts += 1;
       try {
         const status = await this.gelato.getTaskStatus(taskId);
+        if (!status) {
+          if (attempts > this.MAX_STATUS_CHECK_ATTEMPTS) this.clearTimer(taskId, safetyTimeout);
+          return;
+        }
         if (status.taskState === 'ExecSuccess') {
           await this.prisma.relayedTransaction.update({
             where: { id: dbId },
             data: { status: 'EXECUTED', txHash: status.transactionHash, executedAt: new Date() },
           });
           this.clearTimer(taskId, safetyTimeout);
-        } else if (status.taskState === 'ExecReverted' || attempts > 60) {
+        } else if (status.taskState === 'ExecReverted' || attempts > this.MAX_STATUS_CHECK_ATTEMPTS) {
           await this.prisma.relayedTransaction.update({
             where: { id: dbId },
             data: { status: 'FAILED', error: status.lastCheckMessage ?? 'Polling timeout exceeded' },
@@ -217,7 +222,7 @@ export class RelayService implements OnApplicationShutdown {
         }
       } catch (error) {
         this.logger.error(`Polling error for ${taskId}`, error as any);
-        if (attempts > 60) this.clearTimer(taskId, safetyTimeout);
+        if (attempts > this.MAX_STATUS_CHECK_ATTEMPTS) this.clearTimer(taskId, safetyTimeout);
       }
     }, 15000);
 
