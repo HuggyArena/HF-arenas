@@ -24,7 +24,52 @@ export class SanctionsProvider {
   }
 
   async batchScreen(addresses: string[]) {
+    if (this.provider === 'TRM') {
+      return this.batchScreenTRM(addresses);
+    }
     return Promise.all(addresses.map((a) => this.screenAddress(a)));
+  }
+
+  private async batchScreenTRM(addresses: string[]): Promise<SanctionsScreeningResult[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/screening/addresses`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(addresses.map((address) => ({ address, network: 'polygon' }))),
+      });
+      const data: any[] = await response.json();
+      // Build a lookup map keyed by the address returned in each response item so
+      // that the final array order matches the input regardless of API response order.
+      const resultMap = new Map<string, SanctionsScreeningResult>();
+      for (const item of data) {
+        const addr: string = (item?.address ?? '').toLowerCase();
+        if (addr) {
+          resultMap.set(addr, {
+            address: addr,
+            risk: item?.riskScore > 70 ? 'HIGH' : item?.riskScore > 30 ? 'MEDIUM' : 'NONE',
+            categories: item?.flags?.map((f: any) => f.type) || [],
+            entities: item?.identifiedEntities || [],
+          });
+        }
+      }
+      return addresses.map((address) => {
+        const key = address.toLowerCase();
+        return (
+          resultMap.get(key) ?? {
+            address,
+            risk: 'HIGH',
+            categories: ['SCREENING_ERROR'],
+            entities: [],
+          }
+        );
+      });
+    } catch (error) {
+      this.logger.error('TRM batch screening failed', error as any);
+      return addresses.map((address) => ({ address, risk: 'HIGH', categories: ['SCREENING_ERROR'], entities: [] }));
+    }
   }
 
   private async screenTRM(address: string): Promise<SanctionsScreeningResult> {

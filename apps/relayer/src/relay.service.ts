@@ -33,6 +33,8 @@ export class RelayService implements OnApplicationShutdown {
   private readonly activeTimers = new Map<string, NodeJS.Timeout>();
   private readonly MAX_POLLING_DURATION = 15 * 60 * 1000;
   private shuttingDown = false;
+  private rpcProvider: ethers.JsonRpcProvider | null = null;
+  private oracleWallet: ethers.Wallet | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -73,16 +75,11 @@ export class RelayService implements OnApplicationShutdown {
       deadline,
     };
 
-    const oracleKey = process.env.ORACLE_PRIVATE_KEY;
-    if (!oracleKey) throw new BadRequestException('Oracle signing key not configured');
-
-    const wallet = new ethers.Wallet(oracleKey);
-    const signature = await wallet.signTypedData(domain, types, value);
+    const signature = await this.getOracleWallet().signTypedData(domain, types, value);
     return { nonce, signature, deadline, marketAddress: dto.marketAddress };
   }
 
   async submit(dto: SubmitRelayInput) {
-    await this.checkSanctions(dto.userAddress);
     await this.validateBalance(dto.userAddress, dto.amount);
     await this.validateDeadline(dto.deadline);
 
@@ -155,29 +152,34 @@ export class RelayService implements OnApplicationShutdown {
     if (deadline > now + 6 * 60) throw new BadRequestException('Deadline too far in future');
   }
 
-  private async checkSanctions(address: string) {
-    const cached = await this.prisma.sanctionCheck.findFirst({
-      where: {
-        address,
-        checkedAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
-      },
-    });
-    if (cached?.severity === 'HIGH' || cached?.severity === 'SEVERE') {
-      throw new BadRequestException('Address restricted by compliance policy');
-    }
-  }
-
   private async validateBalance(user: string, amount: string) {
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
     const usdcAddress = process.env.USDC_ADDRESS;
     if (!usdcAddress) throw new BadRequestException('USDC address not configured');
     const usdc = new ethers.Contract(
       usdcAddress,
       ['function balanceOf(address) view returns (uint256)'],
-      provider,
+      this.getProvider(),
     );
     const balance = await usdc.balanceOf(user);
     if (balance < BigInt(amount)) throw new BadRequestException('Insufficient USDC balance');
+  }
+
+  private getProvider(): ethers.JsonRpcProvider {
+    if (!this.rpcProvider) {
+      const rpcUrl = process.env.RPC_URL;
+      if (!rpcUrl) throw new BadRequestException('RPC URL not configured');
+      this.rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
+    }
+    return this.rpcProvider;
+  }
+
+  private getOracleWallet(): ethers.Wallet {
+    if (!this.oracleWallet) {
+      const oracleKey = process.env.ORACLE_PRIVATE_KEY;
+      if (!oracleKey) throw new BadRequestException('Oracle signing key not configured');
+      this.oracleWallet = new ethers.Wallet(oracleKey);
+    }
+    return this.oracleWallet;
   }
 
   private async pollForCompletion(dbId: string, taskId: string) {
