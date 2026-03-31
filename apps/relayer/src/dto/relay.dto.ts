@@ -38,6 +38,7 @@ export class SubmitRelayDto {
   @ApiProperty({ description: 'USDC amount in base units (6 decimals). Min 1, max 100 000 000 000 (100k USDC).', example: '1000000' })
   @IsString()
   @Matches(/^[1-9][0-9]*$/, { message: 'Amount must be a positive numeric string without leading zeros' })
+  @Length(1, 12, { message: 'Amount string must be 1-12 digits (max 100 000 000 000)' })
   amount!: string;
 
   @ApiProperty({ description: 'Forwarded calldata payload (hex)', example: '0x' })
@@ -68,6 +69,7 @@ export class OracleSignatureDto {
   @ApiProperty({ description: 'Bet amount in base units' })
   @IsString()
   @Matches(/^[1-9][0-9]*$/, { message: 'Amount must be a positive numeric string' })
+  @Length(1, 12, { message: 'Amount string must be 1-12 digits' })
   amount!: string;
 
   @ApiProperty({ description: 'Replay-protection nonce (required; use a unique integer per request)', required: false })

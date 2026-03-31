@@ -43,7 +43,8 @@ components:
         amount:
           type: string
           pattern: "^[1-9][0-9]*$"
-          description: USDC amount in base units (6 decimals)
+          maxLength: 12
+          description: USDC amount in base units (6 decimals), max 100 000 000 000
         data:
           type: string
           pattern: "^0x[a-fA-F0-9]*$"
@@ -65,6 +66,7 @@ components:
         amount:
           type: string
           pattern: "^[1-9][0-9]*$"
+          maxLength: 12
         nonce:
           type: integer
           minimum: 0
