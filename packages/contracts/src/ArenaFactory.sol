@@ -34,8 +34,7 @@ contract ArenaFactory is AccessControl {
     function createMarket(
         ArenaMarket.MarketParams calldata params,
         bytes32[] calldata outcomes,
-        address referrer,
-        uint256 initialLiquidity
+        address referrer
     ) external returns (address proxy) {
         require(
             registry.isCreator(msg.sender) || registry.creatorBondLocked(msg.sender) >= registry.creatorBondAmount(),
@@ -60,10 +59,6 @@ contract ArenaFactory is AccessControl {
 
         proxy = address(beaconProxy);
         registry.registerMarket(proxy, params.marketId);
-
-        if (initialLiquidity > 0) {
-            registry.collateral().safeTransferFrom(msg.sender, proxy, initialLiquidity);
-        }
 
         emit MarketCreated(proxy, params.marketId, msg.sender, referrer);
     }

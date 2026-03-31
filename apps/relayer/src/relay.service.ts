@@ -27,6 +27,11 @@ type SubmitRelayInput = {
   deadline?: number;
 };
 
+/** Maximum seconds a deadline may be ahead of now — must match ArenaMarket.placeBet */
+const DEADLINE_MAX_FUTURE_SECONDS = 300;
+/** Expected string length of a 0x-prefixed bytes32 hex value (32 bytes × 2 hex chars + 2). */
+const BYTES32_HEX_FULL_LENGTH = 66;
+
 @Injectable()
 export class RelayService implements OnApplicationShutdown {
   private readonly logger = new Logger(RelayService.name);
@@ -34,23 +39,26 @@ export class RelayService implements OnApplicationShutdown {
   private readonly MAX_POLLING_DURATION = 15 * 60 * 1000;
   private shuttingDown = false;
 
+  /** Lazily-created, singleton provider reused across requests. */
+  private rpcProvider: ethers.JsonRpcProvider | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gelato: GelatoProvider,
   ) {}
 
   async generateOracleSignature(dto: OracleSignatureDto) {
-    const nonce = dto.nonce ?? Math.floor(Date.now() / 1000);
-    const deadline = Math.floor(Date.now() / 1000) + 300;
-
     if (!ethers.isAddress(dto.user)) throw new BadRequestException('Invalid user address');
     if (!ethers.isAddress(dto.marketAddress)) throw new BadRequestException('Invalid market address');
+
+    const nonce = dto.nonce ?? Math.floor(Date.now() / 1000);
+    const deadline = Math.floor(Date.now() / 1000) + DEADLINE_MAX_FUTURE_SECONDS;
 
     const domain = {
       name: 'ArenaMarket',
       version: '1',
       chainId: dto.chainId,
-      verifyingContract: dto.marketAddress,
+      verifyingContract: ethers.getAddress(dto.marketAddress),
     };
 
     const types = {
@@ -64,10 +72,19 @@ export class RelayService implements OnApplicationShutdown {
       ],
     };
 
+    // Ensure outcome is a 32-byte hex string as expected by the contract.
+    // Callers may pass a pre-encoded bytes32 hex or a short string label.
+    let outcomeBytes32: string;
+    if (/^0x[0-9a-fA-F]{64}$/.test(dto.outcome) && dto.outcome.length === BYTES32_HEX_FULL_LENGTH) {
+      outcomeBytes32 = dto.outcome;
+    } else {
+      outcomeBytes32 = ethers.encodeBytes32String(dto.outcome);
+    }
+
     const value = {
-      market: dto.marketAddress,
-      user: dto.user,
-      outcome: dto.outcome,
+      market: ethers.getAddress(dto.marketAddress),
+      user: ethers.getAddress(dto.user),
+      outcome: outcomeBytes32,
       amount: dto.amount,
       nonce,
       deadline,
@@ -152,7 +169,9 @@ export class RelayService implements OnApplicationShutdown {
     if (!deadline) return;
     const now = Math.floor(Date.now() / 1000);
     if (deadline < now) throw new BadRequestException('Transaction deadline expired');
-    if (deadline > now + 6 * 60) throw new BadRequestException('Deadline too far in future');
+    if (deadline > now + DEADLINE_MAX_FUTURE_SECONDS) {
+      throw new BadRequestException(`Deadline too far in future (max ${DEADLINE_MAX_FUTURE_SECONDS}s)`);
+    }
   }
 
   private async checkSanctions(address: string) {
@@ -167,16 +186,24 @@ export class RelayService implements OnApplicationShutdown {
     }
   }
 
+  private getProvider(): ethers.JsonRpcProvider {
+    if (!this.rpcProvider) {
+      const rpcUrl = process.env.RPC_URL;
+      if (!rpcUrl) throw new BadRequestException('RPC_URL not configured');
+      this.rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
+    }
+    return this.rpcProvider;
+  }
+
   private async validateBalance(user: string, amount: string) {
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
     const usdcAddress = process.env.USDC_ADDRESS;
     if (!usdcAddress) throw new BadRequestException('USDC address not configured');
     const usdc = new ethers.Contract(
       usdcAddress,
       ['function balanceOf(address) view returns (uint256)'],
-      provider,
+      this.getProvider(),
     );
-    const balance = await usdc.balanceOf(user);
+    const balance: bigint = await usdc.balanceOf(user);
     if (balance < BigInt(amount)) throw new BadRequestException('Insufficient USDC balance');
   }
 

@@ -13,8 +13,6 @@ import {IRegistry} from "./IRegistry.sol";
 contract ArenaMarket is Initializable, ReentrancyGuardUpgradeable, EIP712Upgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
 
-    uint256[50] private __gap;
-
     enum MarketState { DRAFT, PENDING_APPROVAL, OPEN, CLOSED, PROPOSED, CHALLENGED, FINALIZED, VOIDED }
 
     struct MarketParams {
@@ -53,6 +51,10 @@ contract ArenaMarket is Initializable, ReentrancyGuardUpgradeable, EIP712Upgrade
     bytes32 public winningOutcome;
     uint256 public finalizedAt;
     bytes32 public resolutionHash;
+
+    // Storage gap for upgradeable contract safety.  New state variables must be
+    // added ABOVE this declaration and the gap size reduced accordingly.
+    uint256[50] private __gap;
 
     event MarketInitialized(string indexed marketId, address indexed creator);
     event MarketApproved(address indexed approver);
@@ -113,6 +115,7 @@ contract ArenaMarket is Initializable, ReentrancyGuardUpgradeable, EIP712Upgrade
     }
 
     function approveMarket() external onlyOracle onlyState(MarketState.PENDING_APPROVAL) {
+        require(block.timestamp >= params.openTime, "Market: before open time");
         state = MarketState.OPEN;
         _unpause();
         emit MarketApproved(msg.sender);

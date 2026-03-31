@@ -2,6 +2,9 @@
   "name": "@arena/prisma",
   "private": true,
   "version": "1.0.0",
+  "prisma": {
+    "schema": "schema.prisma"
+  },
   "scripts": {
     "generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",

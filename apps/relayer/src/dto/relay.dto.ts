@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { BadRequestException } from '@nestjs/common';
 import { ethers } from 'ethers';
 
 export class SubmitRelayDto {
@@ -55,10 +56,14 @@ export class RelayResponseDto {
   status!: string;
 }
 
+/**
+ * Returns the EIP-55 checksummed form of the provided Ethereum address.
+ * Throws BadRequestException if the address is not valid.
+ */
 export function normalizeAddress(address: string): string {
   try {
-    return ethers.getAddress(address).toLowerCase();
+    return ethers.getAddress(address);
   } catch {
-    throw new Error(`Invalid address: ${address}`);
+    throw new BadRequestException(`Invalid address: ${address}`);
   }
 }

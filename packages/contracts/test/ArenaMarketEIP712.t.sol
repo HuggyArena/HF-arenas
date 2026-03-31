@@ -42,8 +42,11 @@ contract ArenaMarketEIP712Test is Test {
         });
 
         market.initialize(address(registry), params, outcomes, admin, address(0));
-        market.approveMarket();
         vm.stopPrank();
+
+        // approveMarket requires ORACLE_ROLE; call as oracle
+        vm.prank(oracle);
+        market.approveMarket();
     }
 
     function testBetTypehashExists() public view {
