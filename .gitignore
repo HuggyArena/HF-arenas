@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+coverage
+.turbo
+.next
+.env
+.env.*
+!.env.example
+pnpm-lock.yaml
+generated
+.cache
+artifacts
+broadcast
+out
+typechain-types
