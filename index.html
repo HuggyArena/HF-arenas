@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HF-Arenas</title>
+  <meta name="description" content="HF-Arenas is a forecasting and market-simulation platform for collective intelligence, AI-assisted signal discovery, and community prediction interfaces." />
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #0f172a;
+      --panel-2: #111827;
+      --text: #e5eefc;
+      --muted: #94a3b8;
+      --line: #243041;
+      --accent: #60a5fa;
+      --accent-2: #22d3ee;
+      --success: #34d399;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0b1220 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+    }
+
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      font-size: 1.05rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .hero {
+      padding: 56px 0 28px;
+      display: grid;
+      gap: 28px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(96,165,250,0.28);
+      border-radius: 999px;
+      color: #bfdbfe;
+      background: rgba(30, 41, 59, 0.55);
+      width: fit-content;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 5.5vw, 4.6rem);
+      line-height: 1.02;
+      max-width: 900px;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.82);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #04111f;
+      border: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.72));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.28);
+    }
+
+    .preview {
+      display: grid;
+      gap: 16px;
+    }
+
+    .market-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: rgba(2,6,23,0.64);
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+    }
+
+    .market-row strong { display: block; }
+    .market-row span { color: var(--muted); font-size: 0.92rem; }
+    .price { font-weight: 800; color: var(--success); }
+
+    section {
+      padding: 20px 0 8px;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+    }
+
+    .section-copy {
+      margin: 0 0 22px;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .feature h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .repo-topics {
+      margin-top: 8px;
+    }
+
+    .topic-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .topic {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #172033;
+      color: #93c5fd;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: 1px solid #334155;
+    }
+
+    .footer {
+      padding: 36px 0 48px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="nav">
+      <div class="brand">HF-Arenas</div>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#topics">Topics</a>
+        <a href="#features">Features</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="badge">Forecasting · AI · Collective Intelligence</div>
+      <div class="hero-grid">
+        <div>
+          <h1>Market-style forecasting for communities, research, and AI-assisted signal discovery.</h1>
+          <p>
+            HF-Arenas is a forecasting and market-simulation platform designed to help communities explore probabilities,
+            surface signal, and experiment with modern prediction interfaces in a safer research-first format.
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="mailto:cyberblicc@icloud.com">Contact Montana</a>
+            <a class="btn" href="#topics">View Repo Topics</a>
+          </div>
+        </div>
+
+        <aside class="card preview" aria-label="Product preview">
+          <div class="market-row">
+            <div>
+              <strong>Will open-source forecasting grow in 2026?</strong>
+              <span>Community market simulation</span>
+            </div>
+            <div class="price">67%</div>
+          </div>
+          <div class="market-row">
+            <div>
+              <strong>Can AI summaries improve crowd signal?</strong>
+              <span>Research arena experiment</span>
+            </div>
+            <div class="price">72%</div>
+          </div>
+          <div class="market-row">
+            <div>
+              <strong>Will identity reduce low-quality participation?</strong>
+              <span>Anti-sybil / reputation test</span>
+            </div>
+            <div class="price">61%</div>
+          </div>
+        </aside>
+      </div>
+    </header>
+
+    <section id="about">
+      <h2 class="section-title">About HF-Arenas</h2>
+      <p class="section-copy">
+        HF-Arenas combines forecasting UX, market-style interaction, and AI-native tooling to support collective intelligence,
+        decision support, and community experimentation. It is positioned around simulation, research, and signal discovery.
+      </p>
+    </section>
+
+    <section id="topics" class="repo-topics">
+      <h2 class="section-title">GitHub Topics</h2>
+      <p class="section-copy">
+        These topics help make the project more discoverable while keeping the public positioning aligned with forecasting,
+        simulation, and AI-assisted research use cases.
+      </p>
+      <div class="topic-list">
+        <span class="topic">forecasting</span>
+        <span class="topic">prediction-markets</span>
+        <span class="topic">market-simulation</span>
+        <span class="topic">collective-intelligence</span>
+        <span class="topic">ai</span>
+        <span class="topic">llm</span>
+        <span class="topic">hugging-face</span>
+        <span class="topic">web3</span>
+        <span class="topic">crypto</span>
+        <span class="topic">community-platform</span>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2 class="section-title">Why it stands out</h2>
+      <div class="grid-3">
+        <div class="card feature">
+          <h3>Forecasting-first positioning</h3>
+          <p>Designed around decision support, community signal, and research-friendly market simulation.</p>
+        </div>
+        <div class="card feature">
+          <h3>AI-native workflow</h3>
+          <p>Built to support summarization, context layers, and future LLM-assisted market analysis.</p>
+        </div>
+        <div class="card feature">
+          <h3>Crypto and identity ready</h3>
+          <p>Structured to explore wallets, reputation systems, anti-sybil tools, and onchain coordination.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Built by Montana Magerus · Contact: <a href="mailto:cyberblicc@icloud.com">cyberblicc@icloud.com</a>
+    </footer>
+  </div>
+</body>
+</html>
