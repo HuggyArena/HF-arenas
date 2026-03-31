@@ -49,12 +49,79 @@ contract ArenaMarketEIP712Test is Test {
     function testBetTypehashExists() public view {
         assertTrue(market.BET_TYPEHASH() != bytes32(0));
     }
+
+    function testInitialMarketState() public view {
+        assertTrue(market.getCurrentState() == ArenaMarket.MarketState.OPEN);
+        assertEq(market.totalPool(), 0);
+        assertTrue(market.isValidOutcome(OUTCOME_YES));
+        assertTrue(market.isValidOutcome(OUTCOME_NO));
+        assertFalse(market.isValidOutcome(bytes32(0)));
+    }
+}
+
+contract ArenaRegistryTest is Test {
+    ArenaRegistry internal registry;
+    address internal admin = address(0xA11CE);
+    MockUSDC internal usdc;
+
+    function setUp() public {
+        usdc = new MockUSDC();
+        vm.prank(admin);
+        registry = new ArenaRegistry(address(usdc), admin);
+    }
+
+    function testDefaultFees() public view {
+        assertEq(registry.protocolFeeBps(), 275);
+        assertEq(registry.creatorFeeBps(), 100);
+        assertEq(registry.referralFeeBps(), 50);
+        assertEq(registry.disputeReserveBps(), 75);
+        assertEq(registry.totalFeeBps(), 500);
+    }
+
+    function testSetFeesRevertsAboveMax() public {
+        vm.prank(admin);
+        vm.expectRevert("Registry: max fee");
+        registry.setFees(3000, 1000, 500, 600);
+    }
+
+    function testSetFeesSuccess() public {
+        vm.prank(admin);
+        registry.setFees(300, 100, 50, 50);
+        assertEq(registry.totalFeeBps(), 500);
+    }
+
+    function testSetTreasuryRejectsZero() public {
+        vm.prank(admin);
+        vm.expectRevert("Registry: zero treasury");
+        registry.setTreasury(address(0));
+    }
+
+    function testSetOracleModuleRejectsZero() public {
+        vm.prank(admin);
+        vm.expectRevert("Registry: zero oracle module");
+        registry.setOracleModule(address(0));
+    }
+
+    function testSanctionStatus() public {
+        address suspect = address(0xBAD);
+        assertFalse(registry.checkSanction(suspect));
+        vm.prank(admin);
+        registry.setSanctionStatus(suspect, true);
+        assertTrue(registry.checkSanction(suspect));
+    }
+
+    function testConstructorRejectsZeroCollateral() public {
+        vm.expectRevert("Registry: zero collateral");
+        new ArenaRegistry(address(0), admin);
+    }
 }
 
 contract MockUSDC {
     string public name = "Mock USDC";
     string public symbol = "mUSDC";
     uint8 public decimals = 6;
+
+    mapping(address => uint256) public balanceOf;
 
     function transferFrom(address, address, uint256) external pure returns (bool) {
         return true;

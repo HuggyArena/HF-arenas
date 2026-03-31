@@ -6,10 +6,18 @@ import crypto from 'crypto';
 export class SumsubProvider {
   private readonly logger = new Logger(SumsubProvider.name);
   private readonly baseUrl = 'https://api.sumsub.com';
-  private readonly appToken = process.env.SUMSUB_APP_TOKEN || '';
-  private readonly secretKey = process.env.SUMSUB_SECRET_KEY || '';
+  private readonly appToken: string;
+  private readonly secretKey: string;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.appToken = process.env.SUMSUB_APP_TOKEN || '';
+    this.secretKey = process.env.SUMSUB_SECRET_KEY || '';
+    if (!this.secretKey) {
+      this.logger.warn(
+        'SUMSUB_SECRET_KEY is not set — webhook signature verification will reject all requests',
+      );
+    }
+  }
 
   async createApplicant(userId: string, levelName: string) {
     const timestamp = Date.now();

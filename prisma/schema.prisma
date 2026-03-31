@@ -92,6 +92,7 @@ model Bet {
   oddsAtBet Decimal?      @db.Decimal(30, 18)
   status    String        @default("ACTIVE")
   createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   market    Market        @relation(fields: [marketId], references: [id])
   outcome   MarketOutcome @relation(fields: [outcomeId], references: [id])
   user      User          @relation(fields: [userId], references: [id])
@@ -140,6 +141,7 @@ model SanctionCheck {
   severity  String
   source    String
   checkedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([address, checkedAt])
 }

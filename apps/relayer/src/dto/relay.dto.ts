@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { BadRequestException } from '@nestjs/common';
 import { ethers } from 'ethers';
 
 export class SubmitRelayDto {
@@ -55,10 +56,43 @@ export class RelayResponseDto {
   status!: string;
 }
 
+export class OracleSignatureDto {
+  @ApiProperty({ description: 'User wallet address' })
+  @IsString()
+  @Length(42, 42)
+  @Matches(/^0x[a-fA-F0-9]{40}$/, { message: 'Must be valid Ethereum address hex' })
+  user!: string;
+
+  @ApiProperty({ description: 'Bet outcome (bytes32 hex)' })
+  @IsString()
+  @Matches(/^0x[a-fA-F0-9]{64}$/, { message: 'Must be valid bytes32 hex' })
+  outcome!: string;
+
+  @ApiProperty({ description: 'USDC amount in base units (6 decimals)' })
+  @IsString()
+  @Matches(/^[0-9]+$/, { message: 'Amount must be numeric string' })
+  amount!: string;
+
+  @ApiProperty({ description: 'Optional nonce override', required: false })
+  @IsOptional()
+  @IsInt()
+  nonce?: number;
+
+  @ApiProperty({ description: 'Market contract address' })
+  @IsString()
+  @Length(42, 42)
+  @Matches(/^0x[a-fA-F0-9]{40}$/, { message: 'Must be valid Ethereum address hex' })
+  marketAddress!: string;
+
+  @ApiProperty({ description: 'Chain ID', example: 137 })
+  @IsInt()
+  chainId!: number;
+}
+
 export function normalizeAddress(address: string): string {
   try {
     return ethers.getAddress(address).toLowerCase();
   } catch {
-    throw new Error(`Invalid address: ${address}`);
+    throw new BadRequestException(`Invalid address: ${address}`);
   }
 }

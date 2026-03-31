@@ -1,7 +1,7 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RelayService } from './relay.service';
-import { SubmitRelayDto, RelayResponseDto, normalizeAddress } from './dto/relay.dto';
+import { SubmitRelayDto, RelayResponseDto, OracleSignatureDto, normalizeAddress } from './dto/relay.dto';
 import { SanctionsGuard } from './compliance/guards/sanctions.guard';
 
 @ApiTags('Transaction Relay')
@@ -24,15 +24,14 @@ export class RelayController {
 
   @Post('signature')
   @ApiOperation({ summary: 'Oracle signs bet parameters (pre-relay)' })
-  async getSignature(
-    @Body() dto: { user: string; outcome: string; amount: string; nonce?: number; marketAddress: string; chainId: number },
-  ) {
+  async getSignature(@Body() dto: OracleSignatureDto) {
     return this.relayService.generateOracleSignature(dto);
   }
 
   @Post('status')
   @ApiOperation({ summary: 'Check relay task status' })
   async getStatus(@Body('taskId') taskId: string) {
+    if (!taskId) throw new BadRequestException('taskId is required');
     return this.relayService.getTaskStatus(taskId);
   }
 }
