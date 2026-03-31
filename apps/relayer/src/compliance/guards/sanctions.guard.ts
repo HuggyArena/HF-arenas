@@ -12,7 +12,9 @@ export class SanctionsGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const address = request.body?.userAddress || request.params?.address;
-    if (!address) return true;
+    if (!address) {
+      throw new ForbiddenException('Missing address for sanctions check');
+    }
 
     const normalized = String(address).toLowerCase();
     const cached = await this.prisma.sanctionCheck.findFirst({

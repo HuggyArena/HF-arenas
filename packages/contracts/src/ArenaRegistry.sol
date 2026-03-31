@@ -75,6 +75,7 @@ contract ArenaRegistry is AccessControl, Pausable {
     }
 
     function setOracleModule(address _o) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_o != address(0), "Registry: zero oracle module");
         oracleModule = _o;
         emit OracleModuleUpdated(_o);
     }

@@ -85,6 +85,7 @@ export class SyncService implements OnModuleInit, OnApplicationShutdown {
 
     await this.prisma.$transaction(async (tx) => {
       for (const market of markets) {
+        const createdDate = new Date(Number(market.createdAt) * 1000);
         await tx.market.upsert({
           where: { contractAddress: market.id },
           update: {
@@ -98,9 +99,11 @@ export class SyncService implements OnModuleInit, OnApplicationShutdown {
             status: market.status,
             totalPool: market.totalPool.toString(),
             sourcePrimary: 'subgraph',
-            closeTime: new Date(),
-            resolveTime: new Date(),
-            createdAt: new Date(Number(market.createdAt) * 1000),
+            // closeTime and resolveTime are not available from subgraph events;
+            // these will be back-filled by a future enrichment pass or admin tool.
+            closeTime: createdDate,
+            resolveTime: createdDate,
+            createdAt: createdDate,
           },
         });
       }
