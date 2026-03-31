@@ -1,0 +1,24 @@
+{
+  "name": "arena-hf-top-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@9.12.3",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "prisma:generate": "pnpm --dir prisma exec prisma generate",
+    "prisma:migrate": "pnpm --dir prisma exec prisma migrate deploy",
+    "contracts:build": "pnpm --dir packages/contracts run build",
+    "contracts:test": "pnpm --dir packages/contracts run test",
+    "relayer:dev": "pnpm --dir apps/relayer run start:dev",
+    "indexer:dev": "pnpm --dir apps/indexer run start:dev",
+    "subgraph:codegen": "pnpm --dir subgraph run codegen",
+    "subgraph:build": "pnpm --dir subgraph run build"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3"
+  }
+}
