@@ -1,22 +1,26 @@
-version: '3.8'
+# Local integration docker-compose
+# Run from the monorepo root:
+#   docker compose up --build
+#
+# All build contexts are set to `.` (monorepo root) so that workspace
+# packages (e.g. @arena/shared-prisma) are available during image builds.
 
-# Production compose — run from the monorepo root:
-#   docker compose -f config/docker-compose.production.yaml up -d
-# Build contexts use `..` to reference the monorepo root so that workspace
-# packages are available during each image build.
+version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:-arena}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: arena
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,6 +28,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -34,35 +40,33 @@ services:
     image: node:20-alpine
     working_dir: /app
     volumes:
-      - ..:/app
+      - .:/app
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/arena
     command: >
       sh -c "npm install -g pnpm@9.12.3 &&
              pnpm --dir prisma run migrate:deploy"
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
 
   relayer:
     build:
-      context: ..
+      context: .
       dockerfile: apps/relayer/Dockerfile
-    image: arena-relayer:latest
     ports:
       - "3001:3001"
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/arena
+      REDIS_URL: redis://redis:6379
       CHAIN_ID: ${CHAIN_ID:-137}
-      RPC_URL: ${RPC_URL:?RPC_URL is required}
-      USDC_ADDRESS: ${USDC_ADDRESS:?USDC_ADDRESS is required}
-      REGISTRY_ADDRESS: ${REGISTRY_ADDRESS:?REGISTRY_ADDRESS is required}
-      ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY:?ORACLE_PRIVATE_KEY is required}
-      GELATO_API_KEY: ${GELATO_API_KEY:?GELATO_API_KEY is required}
+      RPC_URL: ${RPC_URL}
+      USDC_ADDRESS: ${USDC_ADDRESS}
+      REGISTRY_ADDRESS: ${REGISTRY_ADDRESS:-0x0000000000000000000000000000000000000000}
+      ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY}
+      GELATO_API_KEY: ${GELATO_API_KEY}
       SANCTIONS_PROVIDER: ${SANCTIONS_PROVIDER:-TRM}
       TRM_API_KEY: ${TRM_API_KEY:-}
       CHAINALYSIS_API_KEY: ${CHAINALYSIS_API_KEY:-}
@@ -70,8 +74,6 @@ services:
       SUMSUB_SECRET_KEY: ${SUMSUB_SECRET_KEY:-}
     depends_on:
       db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -85,16 +87,15 @@ services:
 
   indexer:
     build:
-      context: ..
+      context: .
       dockerfile: apps/indexer/Dockerfile
-    image: arena-indexer:latest
     ports:
       - "3002:3002"
     environment:
       NODE_ENV: production
       PORT: 3002
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      SUBGRAPH_URL: ${SUBGRAPH_URL:?SUBGRAPH_URL is required}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/arena
+      SUBGRAPH_URL: ${SUBGRAPH_URL}
     depends_on:
       db:
         condition: service_healthy

@@ -4,7 +4,7 @@ import { ArenaMarket as ArenaMarketTemplate } from '../generated/templates';
 
 export function handleMarketCreated(event: MarketCreated): void {
   let market = new Market(event.params.proxy.toHexString());
-  market.marketId = event.params.marketId;
+  market.marketId = event.params.marketId.toHexString();
   market.creator = event.params.creator.toHexString();
   market.status = 'PENDING_APPROVAL';
   market.totalPool = event.block.number.minus(event.block.number);
