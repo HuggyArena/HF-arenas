@@ -35,6 +35,7 @@ export class RelayService implements OnApplicationShutdown {
     { pollInterval: NodeJS.Timeout; safetyTimeout: NodeJS.Timeout }
   >();
   private readonly MAX_POLLING_DURATION = 15 * 60 * 1000;
+  private readonly MAX_POLLING_ATTEMPTS = 60;
   private shuttingDown = false;
 
   constructor(
@@ -190,19 +191,15 @@ export class RelayService implements OnApplicationShutdown {
     if (this.shuttingDown) return;
 
     const safetyTimeout = setTimeout(() => {
-      const timers = this.activeTimers.get(taskId);
-      if (timers) {
-        clearInterval(timers.pollInterval);
-        clearTimeout(timers.safetyTimeout);
-        this.activeTimers.delete(taskId);
-        this.logger.warn(`Force cleared timer for ${taskId}`);
-      }
+      const hasTimers = this.activeTimers.has(taskId);
+      this.clearTimer(taskId);
+      if (hasTimers) this.logger.warn(`Force cleared timer for ${taskId}`);
     }, this.MAX_POLLING_DURATION);
 
     let attempts = 0;
     const timer = setInterval(async () => {
-      if (this.shuttingDown) {
-        this.clearTimer(taskId, safetyTimeout);
+        if (this.shuttingDown) {
+        this.clearTimer(taskId);
         return;
       }
 
@@ -210,12 +207,12 @@ export class RelayService implements OnApplicationShutdown {
       try {
         const status = await this.gelato.getTaskStatus(taskId);
         if (!status) {
-          if (attempts > 60) {
+          if (attempts > this.MAX_POLLING_ATTEMPTS) {
             await this.prisma.relayedTransaction.update({
               where: { id: dbId },
               data: { status: 'FAILED', error: 'Polling timeout exceeded' },
             });
-            this.clearTimer(taskId, safetyTimeout);
+            this.clearTimer(taskId);
           }
           return;
         }
@@ -224,30 +221,32 @@ export class RelayService implements OnApplicationShutdown {
             where: { id: dbId },
             data: { status: 'EXECUTED', txHash: status.transactionHash, executedAt: new Date() },
           });
-          this.clearTimer(taskId, safetyTimeout);
-        } else if (status.taskState === 'ExecReverted' || attempts > 60) {
+          this.clearTimer(taskId);
+        } else if (
+          status.taskState === 'ExecReverted' ||
+          attempts > this.MAX_POLLING_ATTEMPTS
+        ) {
           await this.prisma.relayedTransaction.update({
             where: { id: dbId },
             data: { status: 'FAILED', error: status.lastCheckMessage ?? 'Polling timeout exceeded' },
           });
-          this.clearTimer(taskId, safetyTimeout);
+          this.clearTimer(taskId);
         }
       } catch (error) {
         this.logger.error(`Polling error for ${taskId}`, error as any);
-        if (attempts > 60) this.clearTimer(taskId, safetyTimeout);
+        if (attempts > this.MAX_POLLING_ATTEMPTS) this.clearTimer(taskId);
       }
     }, 15000);
 
     this.activeTimers.set(taskId, { pollInterval: timer, safetyTimeout });
   }
 
-  private clearTimer(taskId: string, safetyTimeout: NodeJS.Timeout) {
+  private clearTimer(taskId: string) {
     const timers = this.activeTimers.get(taskId);
     if (timers) {
       clearInterval(timers.pollInterval);
       clearTimeout(timers.safetyTimeout);
       this.activeTimers.delete(taskId);
     }
-    clearTimeout(safetyTimeout);
   }
 }
