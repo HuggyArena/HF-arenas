@@ -1,0 +1,15 @@
+{
+  "name": "@arena/subgraph",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.98.1",
+    "@graphprotocol/graph-ts": "^0.35.1",
+    "assemblyscript": "^0.27.31",
+    "matchstick-as": "^0.6.0"
+  }
+}
