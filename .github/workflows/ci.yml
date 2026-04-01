@@ -8,6 +8,29 @@ permissions:
   contents: read
 
 jobs:
+  app:
+    name: App checks (install, lint, typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
   contracts:
     name: Contracts (forge test)
     runs-on: ubuntu-latest
