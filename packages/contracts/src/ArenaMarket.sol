@@ -28,6 +28,11 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         uint256 challengeWindowSeconds;
     }
 
+    /// @notice EIP-712 typehash for an oracle-signed stake allocation.
+    /// @dev Institutional lexicon: this typehash governs "Attest" / "Allocate" operations
+    ///      in the Data Verification Protocol.  The legacy identifier `BET_TYPEHASH` is
+    ///      preserved for ABI and on-chain compatibility; all future documentation and
+    ///      off-chain tooling should refer to this as the STAKE_TYPEHASH (stakeCollateral).
     bytes32 public constant BET_TYPEHASH = keccak256(
         "Bet(address market,address user,bytes32 outcome,uint256 amount,uint256 nonce,uint256 deadline)"
     );
@@ -69,6 +74,8 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
 
     event MarketInitialized(string indexed marketId, address indexed creator);
     event MarketApproved(address indexed approver);
+    /// @dev Institutional lexicon alias: StakeAllocated / AttestationRecorded.
+    ///      The on-chain event name is preserved for ABI compatibility.
     event BetPlaced(address indexed user, bytes32 indexed outcome, uint256 amount, uint256 newTotal, uint256 feeBpsAtBet);
     event MarketClosed(uint256 timestamp);
     event ResolutionProposed(bytes32 indexed outcome, bytes32 indexed evidenceHash);
@@ -131,6 +138,12 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         emit MarketApproved(msg.sender);
     }
 
+    /// @notice Allocate collateral to a data hypothesis outcome (institutional: stakeCollateral).
+    /// @dev Institutional lexicon: "placeBet" → "stakeCollateral" / "allocateToHypothesis".
+    ///      The function name is preserved for ABI and integration compatibility.
+    ///      - `outcome`  : the bytes32 identifier of the data hypothesis being attested.
+    ///      - `amount`   : the collateral stake amount (Data Provider's capital commitment).
+    ///      - `sig`      : oracle-signed EIP-712 authorisation (Confidence Weight attestation).
     function placeBet(bytes32 outcome, uint256 amount, uint256 nonce, uint256 deadline, bytes calldata sig)
         external
         nonReentrant
@@ -142,7 +155,7 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         require(block.timestamp <= deadline, "Market: signature expired");
         require(deadline <= block.timestamp + 300, "Market: deadline too far");
         require(isValidOutcome[outcome], "Market: invalid outcome");
-        require(amount >= registry.minBet() && amount <= registry.maxBet(), "Market: amount out of range");
+        require(amount >= registry.minBet() && amount <= registry.maxBet(), "Market: amount out of range"); // minStake / maxStake in institutional docs
         require(!registry.checkSanction(msg.sender), "Market: sanctioned");
         require(!nonceUsed[msg.sender][nonce], "Market: nonce used");
 
@@ -181,6 +194,7 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         emit MarketClosed(block.timestamp);
     }
 
+    /// @notice Submit the resolved data hypothesis outcome (institutional: resolveDataHypothesis).
     function proposeResolution(bytes32 outcome, bytes32 evidenceHash) external onlyOracle onlyState(MarketState.CLOSED) {
         require(isValidOutcome[outcome], "Market: invalid outcome");
         require(block.timestamp >= params.resolveTime, "Market: early");
@@ -239,6 +253,8 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         emit MarketVoided(reason);
     }
 
+    /// @notice Claim the Accuracy Bounty (Data Yield) for a winning attestation.
+    /// @dev Institutional lexicon: "claim" → "claimAccuracyBounty" / "redeemDataYield".
     function claim() external nonReentrant onlyState(MarketState.FINALIZED) {
         require(!hasClaimed[msg.sender], "Market: claimed");
         uint256 stake = userStakes[msg.sender][winningOutcome];
@@ -276,6 +292,11 @@ contract ArenaMarket is Initializable, ReentrancyGuard, EIP712Upgradeable, Pausa
         registry.collateral().safeTransfer(msg.sender, totalRefund);
     }
 
+    /// @notice Returns the probability-yield weight for a given outcome.
+    /// @dev Institutional lexicon: "getOdds" → "getProbabilityYield" / "getConfidenceWeight".
+    ///      The function name is preserved for ABI and integration compatibility.
+    ///      Returns a fixed-point value scaled by 1e18 representing the implied payout
+    ///      multiplier (Accuracy Bounty yield) per unit of collateral staked.
     function getOdds(bytes32 outcome) external view returns (uint256) {
         uint256 poolForOutcome = outcomePools[outcome];
         if (poolForOutcome == 0) return 0;
