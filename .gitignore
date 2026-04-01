@@ -7,7 +7,6 @@ coverage
 .env
 .env.*
 !.env.example
-pnpm-lock.yaml
 generated
 .cache
 artifacts

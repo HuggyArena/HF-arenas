@@ -120,7 +120,7 @@ contract ArenaFactoryTest is Test {
     function testCreateMarketWithBondPayment() public {
         // Test the auto-lock path: creator is approved but has no bond locked yet.
         // The factory will call registry.lockCreatorBond, which pulls from the creator.
-        address bondedCreator = address(0xB0ND);
+        address bondedCreator = address(0xB011D);
         uint256 bond = registry.creatorBondAmount();
 
         // Approve as creator (no bond locked yet)
