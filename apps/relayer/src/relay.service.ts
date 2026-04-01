@@ -271,6 +271,7 @@ export class RelayService implements OnApplicationShutdown {
       attempts += 1;
       try {
         const status = await this.gelato.getTaskStatus(taskId);
+        if (!status) return;
         if (status.taskState === 'ExecSuccess') {
           await this.prisma.relayedTransaction.update({
             where: { id: dbId },

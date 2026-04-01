@@ -23,7 +23,7 @@ jobs:
           version: 9.12.3
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -52,4 +52,4 @@ jobs:
         run: forge build --root packages/contracts
 
       - name: Run tests
-        run: forge test --root packages/contracts -v
+        run: forge test --root packages/contracts -vvv

@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@arena/shared-prisma';
 
+type TransactionClient = Parameters<PrismaService['$transaction']>[0] extends (tx: infer T) => Promise<unknown> ? T : never;
+
 @Injectable()
 export class SyncService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(SyncService.name);
@@ -87,7 +89,7 @@ export class SyncService implements OnModuleInit, OnApplicationShutdown {
     const markets = json?.data?.markets || [];
     if (markets.length === 0) return;
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: TransactionClient) => {
       for (const market of markets) {
         await tx.market.upsert({
           where: { contractAddress: market.id },
