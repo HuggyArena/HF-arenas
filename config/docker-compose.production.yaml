@@ -1,23 +1,78 @@
 version: '3.8'
 services:
   relayer:
-    build: ./apps/relayer
+    build:
+      context: ..
+      dockerfile: apps/relayer/Dockerfile
     ports:
       - "3001:3001"
+    restart: unless-stopped
     environment:
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/arena
       - REDIS_URL=redis://redis:6379
+      - RPC_URL=${RPC_URL}
+      - ORACLE_PRIVATE_KEY=${ORACLE_PRIVATE_KEY}
+      - GELATO_API_KEY=${GELATO_API_KEY}
+      - USDC_ADDRESS=${USDC_ADDRESS}
+      - REGISTRY_ADDRESS=${REGISTRY_ADDRESS}
+      - ADMIN_ADDRESS=${ADMIN_ADDRESS}
+      - SANCTIONS_PROVIDER=${SANCTIONS_PROVIDER:-TRM}
+      - TRM_API_KEY=${TRM_API_KEY}
+      - CHAINALYSIS_API_KEY=${CHAINALYSIS_API_KEY}
+      - SUMSUB_APP_TOKEN=${SUMSUB_APP_TOKEN}
+      - SUMSUB_SECRET_KEY=${SUMSUB_SECRET_KEY}
+      - AUTH_PEPPER=${AUTH_PEPPER}
+      - CHAIN_ID=${CHAIN_ID:-137}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   indexer:
-    build: ./apps/indexer
+    build:
+      context: ..
+      dockerfile: apps/indexer/Dockerfile
     ports:
       - "3002:3002"
+    restart: unless-stopped
     environment:
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/arena
+      - SUBGRAPH_URL=${SUBGRAPH_URL}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ../apps/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   db:
     image: postgres:15-alpine
     restart: unless-stopped
@@ -29,10 +84,22 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
