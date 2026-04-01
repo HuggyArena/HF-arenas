@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:e2e": "playwright test",
     "prisma:generate": "pnpm --dir prisma exec prisma generate",
     "prisma:migrate": "pnpm --dir prisma exec prisma migrate deploy",
     "contracts:build": "pnpm --dir packages/contracts run build",
