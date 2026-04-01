@@ -14,7 +14,7 @@ contract ArenaFactoryTest is Test {
     MockUSDC internal usdc;
 
     address internal admin = address(0xA11CE);
-    address internal oracle = address(0x0RACLE);
+    address internal oracle = address(0x0AC1E);
     address internal creator = address(0xC0DE);
     address internal referrer = address(0xFEED);
 
