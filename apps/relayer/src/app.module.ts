@@ -6,9 +6,10 @@ import { GelatoProvider } from './providers/gelato.provider';
 import { ComplianceModule } from './compliance/compliance.module';
 import { PrismaModule } from '@arena/shared-prisma';
 import { HealthController } from './health.controller';
+import { FaucetModule } from './faucet/faucet.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), ComplianceModule, PrismaModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), ComplianceModule, PrismaModule, FaucetModule],
   controllers: [RelayController, HealthController],
   providers: [RelayService, GelatoProvider],
 })
