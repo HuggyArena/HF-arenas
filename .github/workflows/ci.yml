@@ -18,12 +18,12 @@ jobs:
 
       - uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Install Foundry dependencies
-        run: |
-          forge install foundry-rs/forge-std --no-commit
-          forge install OpenZeppelin/openzeppelin-contracts --no-commit
-          forge install OpenZeppelin/openzeppelin-contracts-upgradeable --no-commit
+      - name: Install contract dependencies
         working-directory: packages/contracts
+        run: |
+          forge install foundry-rs/forge-std --no-git
+          forge install OpenZeppelin/openzeppelin-contracts --no-git
+          forge install OpenZeppelin/openzeppelin-contracts-upgradeable --no-git
 
       - name: Build contracts
         run: forge build --root packages/contracts
