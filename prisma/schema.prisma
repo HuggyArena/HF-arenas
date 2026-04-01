@@ -8,16 +8,21 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(uuid())
-  walletAddress String?    @unique
-  email         String?    @unique
-  displayName   String?
-  kycStatus     String     @default("NONE")
-  kycLevel      String     @default("NONE")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  bets          Bet[]
-  positions     Position[]
+  id                    String                  @id @default(uuid())
+  walletAddress         String?                 @unique
+  email                 String?                 @unique
+  displayName           String?
+  kycStatus             String                  @default("NONE")
+  kycLevel              String                  @default("NONE")
+  jurisdiction          String                  @default("UNKNOWN")
+  accountType           String                  @default("TOURNAMENT")
+  xpBalance             Decimal                 @default(0) @db.Decimal(20, 6)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  bets                  Bet[]
+  positions             Position[]
+  tournamentLeaderboard TournamentLeaderboard[]
+  tournamentPrizes      TournamentPrize[]
 }
 
 model Creator {
@@ -160,4 +165,36 @@ model SyncState {
   updatedAt DateTime @updatedAt
 
   @@index([updatedAt])
+}
+
+model TournamentLeaderboard {
+  id         String   @id @default(uuid())
+  userId     String
+  epochMonth Int
+  epochYear  Int
+  score      Decimal  @default(0) @db.Decimal(20, 6)
+  rank       Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, epochMonth, epochYear])
+  @@index([epochYear, epochMonth])
+}
+
+model TournamentPrize {
+  id           String    @id @default(uuid())
+  userId       String
+  epochMonth   Int
+  epochYear    Int
+  amountUsdc   Decimal   @db.Decimal(20, 6)
+  gelatoTaskId String?
+  txHash       String?
+  status       String    @default("PENDING")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, epochYear, epochMonth])
+  @@index([epochYear, epochMonth])
 }
