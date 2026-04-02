@@ -10,19 +10,21 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@arena/shared-prisma": "workspace:*",
     "@nestjs/common": "^10.4.2",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.4.2",
     "@nestjs/platform-express": "^10.4.2",
-    "@arena/shared-prisma": "workspace:*",
+    "helmet": "^8.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",
     "@nestjs/schematics": "^10.1.4",
-    "typescript": "^5.6.2",
+    "@types/helmet": "^4.0.0",
+    "@types/node": "^22.7.4",
     "ts-node": "^10.9.2",
-    "@types/node": "^22.7.4"
+    "typescript": "^5.6.2"
   }
 }

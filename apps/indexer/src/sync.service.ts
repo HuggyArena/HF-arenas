@@ -87,7 +87,7 @@ export class SyncService implements OnModuleInit, OnApplicationShutdown {
     const markets = subgraphResponse?.data?.markets || [];
     if (markets.length === 0) return;
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: any) => {
       for (const market of markets) {
         await tx.market.upsert({
           where: { contractAddress: market.id },
