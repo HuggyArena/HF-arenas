@@ -13,7 +13,7 @@ export class GelatoProvider {
       request,
       signer as unknown as SignerOrProvider,
       this.apiKey,
-      { retries: 3 },
+      { retries: 3, gasLimit: BigInt(500000) },
     );
 
     return { taskId: response.taskId };
