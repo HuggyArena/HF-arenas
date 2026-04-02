@@ -22,7 +22,7 @@ export function handleMarketInitialized(event: MarketInitialized): void {
   let market = Market.load(event.address.toHexString());
   if (market == null) {
     market = new Market(event.address.toHexString());
-    market.marketId = event.params.marketId;
+    market.marketId = event.params.marketId.toHexString();
     market.creator = event.params.creator.toHexString();
     market.status = 'PENDING_APPROVAL';
     market.totalPool = zeroBigInt();

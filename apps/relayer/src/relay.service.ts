@@ -128,11 +128,11 @@ export class RelayService implements OnApplicationShutdown {
     }
 
     const relayResult = await this.gelato.sponsorCallERC2771({
-      chainId: dto.chainId,
+      chainId: BigInt(dto.chainId),
       target: dto.target,
       data: dto.data,
       user: dto.userAddress,
-    } as any);
+    }, this.oracleWallet);
 
     const tx = await this.prisma.relayedTransaction.create({
       data: {
@@ -271,6 +271,10 @@ export class RelayService implements OnApplicationShutdown {
       attempts += 1;
       try {
         const status = await this.gelato.getTaskStatus(taskId);
+        if (!status) {
+          if (attempts > 60) this.clearTimer(taskId, safetyTimeout);
+          return;
+        }
         if (status.taskState === 'ExecSuccess') {
           await this.prisma.relayedTransaction.update({
             where: { id: dbId },
