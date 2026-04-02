@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {ArenaRegistry} from "../src/ArenaRegistry.sol";
 import {ArenaMarket} from "../src/ArenaMarket.sol";
-import {MockUSDC} from "./helpers/MockUSDC.sol";
 
 contract ArenaMarketEIP712Test is Test {
     ArenaRegistry internal registry;
