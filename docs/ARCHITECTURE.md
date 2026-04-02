@@ -21,8 +21,8 @@ All decisions are grounded in publicly available DeFi ecosystem data (2024-Q4).
 with Arbitrum as a secondary deployment for power/institutional users (higher TVL, deeper DeFi integrations).
 
 *Code impact:* `ArenaRegistry` supports a single collateral token per deployment; the primary token on
-Base is native USDC (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`); on Arbitrum, use bridged USDC
-(`0xaf88d065e77c8cC2239327C5EDb3A432268e5831`).
+Base is native USDC (`0x833589fcd6edb6e08f4c7c32d4f71b54bda02913`); on Arbitrum, use bridged USDC
+(`0xaf88d065e77c8cc2239327c5edb3a432268e5831`).
 
 ---
 
@@ -63,7 +63,7 @@ value-add is oracle accuracy (not continuous trading), the simpler parimutuel mo
 | Criteria                  | Chainlink (authoritative)    | UMA Optimistic Oracle        |
 |---------------------------|------------------------------|------------------------------|
 | Market type               | On-chain / objective         | Subjective / off-chain data  |
-| Avg cost per resolution   | ~$0.05–0.30 (gas only)       | ~$10–50 (bond); ~$1 500 if DVM challenged |
+| Avg cost per resolution   | ~$0.05–0.30 (gas only)       | ~$10–50 (bond); ~$1,500 if DVM challenged |
 | Median latency            | <30 s (heartbeat/on-demand)  | 2–4 h (liveness window)      |
 | Dispute mechanism         | No (trusted data provider)   | Bond/slash via DVM           |
 | Composability             | High (`AggregatorV3Interface`)| Medium (event-driven)        |
@@ -132,7 +132,7 @@ high-profile events; yield is a meaningful differentiator in steady-state operat
 
 Default fee schedule (set in `ArenaRegistry`):
 
-| Component       | Default BPS | Amount on $1 000 bet |
+| Component       | Default BPS | Amount on $1,000 bet |
 |-----------------|-------------|----------------------|
 | Protocol fee    | 275 (2.75%) | $27.50               |
 | Creator fee     | 100 (1.00%) | $10.00               |
