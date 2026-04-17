@@ -46,5 +46,8 @@
     "swr": "^2.4.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
